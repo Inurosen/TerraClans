@@ -11,7 +11,6 @@ namespace TerraClans
     {
         public static string terraDB = Path.Combine(TerraClans.terraPath, "terraclans.sqlite");
         public static IDbConnection DB;
-        public static SqlTableEditor SQLEditor;
         public static SqlTableCreator SQLWriter;
 
         public static void InitTerraDB()
@@ -22,8 +21,7 @@ namespace TerraClans
                 SqliteConnection.CreateFile(terraDB);
             }
             DB = new SqliteConnection(string.Format("uri=file://{0},Version=3", sql));
-            SQLEditor = new SqlTableEditor(DB, TShock.DB.GetSqlType() == SqlType.Sqlite ? (IQueryBuilder)new SqliteQueryCreator() : new MysqlQueryCreator());
-            SQLWriter = new SqlTableCreator(DB, TShock.DB.GetSqlType() == SqlType.Sqlite ? (IQueryBuilder)new SqliteQueryCreator() : new MysqlQueryCreator());
+            SQLWriter = new SqlTableCreator(DB, new SqliteQueryCreator());
             var table = new SqlTable("Clans",
             new SqlColumn("clanname", MySqlDbType.Text) { Unique = true },
             new SqlColumn("clangroup", MySqlDbType.Text),
