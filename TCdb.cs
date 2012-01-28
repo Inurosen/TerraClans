@@ -29,13 +29,13 @@ namespace TerraClans
             new SqlColumn("members", MySqlDbType.Text),
             new SqlColumn("motd", MySqlDbType.Text),
             new SqlColumn("invites", MySqlDbType.Text)
-);
+            );
             SQLWriter.EnsureExists(table);
             table = new SqlTable("FoundQueue",
             new SqlColumn("clanname", MySqlDbType.Text) { Unique = true },
             new SqlColumn("founder", MySqlDbType.Text),
             new SqlColumn("cofounder", MySqlDbType.Text)
-);
+            );
             SQLWriter.EnsureExists(table);
         }
 

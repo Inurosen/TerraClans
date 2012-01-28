@@ -274,5 +274,99 @@ namespace TerraClans
             return unixTime;
         }
 
+        public static void TCGreetPlayer(int plr)
+        {
+            string clanName = "";
+            string motd = "";
+            bool valid = false;
+            string plName = TShock.Players[plr].UserAccountName;
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname, motd FROM Clans WHERE leaders LIKE '%" + plName + "%' OR members LIKE '%" + plName + "%'");
+            while (DBQuery.Read())
+            {
+                clanName = DBQuery.Get<string>("clanname");
+                motd = DBQuery.Get<string>("motd");
+            }
+            if (clanName != "")
+            {
+                List<string> members = new List<string>();
+                members = TCutils.GetMembers(clanName);
+                foreach (string i in members)
+                {
+                    if (i == plName)
+                    {
+                        valid = true;
+                    }
+                }
+                List<string> leaders = new List<string>();
+                leaders = TCutils.GetLeaders(clanName);
+                foreach (string i in leaders)
+                {
+                    if (i == plName)
+                    {
+                        valid = true;
+                    }
+                }
+                if (valid)
+                {
+                    TShock.Players[plr].SendMessage("[" + clanName + " MotD]:", Color.GreenYellow);
+                    if (motd != "")
+                    {
+                        TShock.Players[plr].SendMessage(motd, Color.Yellow);
+                    }
+                    else
+                    {
+                        TShock.Players[plr].SendMessage("No message.", Color.Yellow);
+                    }
+                }
+            }
+
+            List<string> invites = new List<string>();
+            invites = TCutils.GetAllInvites();
+            bool isInvited = false;
+            {
+                for (int i = 0; i < invites.Count; i++)
+                {
+                    if (plName == invites[i])
+                    {
+                        isInvited = true;
+                        break;
+                    }
+                }
+            }
+            if (isInvited)
+            {
+                DBQuery = TCdb.DB.QueryReader("SELECT clanname FROM Clans WHERE invites LIKE '%" + plName + "%'");
+                while (DBQuery.Read())
+                {
+                    clanName = DBQuery.Get<string>("clanname");
+                }
+
+                TShock.Players[plr].SendMessage("You have been invited to join the clan: " + clanName, Color.Orange);
+                TShock.Players[plr].SendMessage("/tclan accept - to join", Color.Orange);
+                TShock.Players[plr].SendMessage("/tclan decline - to decline invitation.", Color.Orange);
+            }
+
+            string clCoFounder = "";
+            string clName = "";
+            string clFounder = "";
+            DBQuery = TCdb.DB.QueryReader("SELECT * FROM FoundQueue WHERE cofounder == '" + plName + "' OR founder='" + plName + "'");
+            while (DBQuery.Read())
+            {
+                clName = DBQuery.Get<string>("clanname");
+                clFounder = DBQuery.Get<string>("founder");
+                clCoFounder = DBQuery.Get<string>("cofounder");
+            }
+            if (clName != "" && clFounder != "" && clCoFounder == plName)
+            {
+                TShock.Players[plr].SendMessage("You have been invited by to found the clan: " + clanName, Color.Orange);
+                TShock.Players[plr].SendMessage("/tcfound accept - to join", Color.Orange);
+                TShock.Players[plr].SendMessage("/tcfound decline - to decline invitation.", Color.Orange);
+            }
+            else if (clName != "" && clFounder == plName && clCoFounder != "")
+            {
+                TShock.Players[plr].SendMessage("You are gonna found the clan: " + clanName, Color.Orange);
+                TShock.Players[plr].SendMessage("/tcfound revoke - revokes invitation.", Color.Orange);
+            }
+        }
     }
 }

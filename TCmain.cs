@@ -54,7 +54,7 @@ namespace TerraClans
                 {
                     if (TShock.Players[sender].IsLoggedIn)
                     {
-                        TCaction.TCGreetPlayer(sender);
+                        TCutils.TCGreetPlayer(sender);
                     }
 
                 }
@@ -91,10 +91,10 @@ namespace TerraClans
 	{
 		public static void Load()
 		{
-            TShockAPI.Commands.ChatCommands.Add(new Command(TCaction.CMDtclan, "tclan"));
-            TShockAPI.Commands.ChatCommands.Add(new Command(TCaction.CMDtcsay, "tcsay", "c"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("manageclans", TCaction.CMDtcman, "tcman"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("foundclans", TCaction.CMDtcfound, "tcfound"));
+            TShockAPI.Commands.ChatCommands.Add(new Command(TClan.CMDtclan, "tclan"));
+            TShockAPI.Commands.ChatCommands.Add(new Command(TCsay.CMDtcsay, "tcsay", "c"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("manageclans", TCman.CMDtcman, "tcman"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("foundclans", TCfound.CMDtcfound, "tcfound"));
 		}
 
 	}
