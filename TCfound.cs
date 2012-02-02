@@ -119,6 +119,8 @@ namespace TerraClans
             TCdb.DB.QueryReader("INSERT INTO FoundQueue (clanname, founder, cofounder) VALUES ('" + incArgs.Parameters[0] + "', '" + incArgs.Player.UserAccountName + "', '" + coFounder[0].TSPlayer.UserAccountName + "')");
 
             coFounder[0].TSPlayer.SendMessage(incArgs.Player.Name + " invites you to found new clan: " + incArgs.Parameters[0], Color.Orange);
+            coFounder[0].TSPlayer.SendMessage("/tcfound accept - accepts the invitation. ", Color.Orange);
+            coFounder[0].TSPlayer.SendMessage("/tcfound decline - declines the invitation. ", Color.Orange);
             incArgs.Player.SendMessage("You have invited " + coFounder[0].TSPlayer.Name + " to found new clan.", Color.Orange);
         }
 

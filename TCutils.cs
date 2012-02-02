@@ -6,7 +6,7 @@ namespace TerraClans
 {
     class TCutils
     {
-        public static void ClanMsg(TSPlayer plObj, string msg, int type)
+        public static void ClanMsg(TSPlayer plObj, string msg, int type, bool ignoreInit)
         {
             var clr = Color.GreenYellow;
             string clanName = "";
@@ -50,7 +50,18 @@ namespace TerraClans
                             }
                             else if (type == 1) // Clan announcer
                             {
-                                player.TSPlayer.SendMessage(msg, Color.Yellow);
+                                if (ignoreInit)
+                                {
+                                    if (player.TSPlayer.UserAccountName != plObj.UserAccountName)
+                                    {
+                                        player.TSPlayer.SendMessage(msg, Color.Yellow);
+                                    }
+                                }
+                                else
+                                {
+                                    player.TSPlayer.SendMessage(msg, Color.Yellow);
+                                }
+                                
                             }
                         }
                     }
@@ -172,6 +183,31 @@ namespace TerraClans
                 }
             }
             return leaders;
+        }
+
+        public static bool IsLeader(string uName) {
+            bool yes = false;
+            List<string> clans = new List<string>();
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname FROM Clans WHERE leaders LIKE '%" + uName + "%'");
+            while (DBQuery.Read())
+            {
+                clans.Add(DBQuery.Get<string>("clanname"));
+            }
+            if (clans.Count > 0)
+            {
+                for (int c = 0; c < clans.Count; c++)
+                {
+                    List<string> leaders = GetLeaders(clans[c]);
+                    foreach (string i in leaders)
+                    {
+                        if (i == uName)
+                        {
+                            yes = true;
+                        }
+                    }
+                }
+            }
+            return yes;
         }
 
         public static List<Player> GetPlayersByName(string plrName)
@@ -367,6 +403,74 @@ namespace TerraClans
                 TShock.Players[plr].SendMessage("You are gonna found the clan: " + clanName, Color.Orange);
                 TShock.Players[plr].SendMessage("/tcfound revoke - revokes invitation.", Color.Orange);
             }
+        }
+
+        public static List<string> GetClanByLeader(string uName)
+        {
+            List<string> clName = new List<string>();
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname, leaders FROM Clans WHERE leaders LIKE '%" + uName + "%'");
+            while (DBQuery.Read())
+            {
+                string[] arr = DBQuery.Get<string>("leaders").Split(',');
+                foreach (string i in arr)
+                {
+                    if (i == uName)
+                    {
+                        clName.Add(DBQuery.Get<string>("clanname"));
+                        break;
+                    }
+                }
+
+            }
+            return clName;
+        }
+
+        public static List<string> GetClanByMember(string uName)
+        {
+            List<string> clName = new List<string>();
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname, members FROM Clans WHERE members LIKE '%" + uName + "%'");
+            while (DBQuery.Read())
+            {
+                string[] arr = DBQuery.Get<string>("members").Split(',');
+                foreach (string i in arr)
+                {
+                    if (i == uName)
+                    {
+                        clName.Add(DBQuery.Get<string>("clanname"));
+                        break;
+                    }
+                }
+
+            }
+            return clName;
+        }
+
+        public static bool IsValidMember(string mName, string lName)
+        {
+            bool yes = false;
+
+            List<string> clName = GetClanByLeader(lName);
+            if (clName.Count < 1 || clName.Count > 1)
+            {
+                return yes;
+            }
+            List<string> clMembers = GetMembers(clName[0]);
+            foreach (string i in clMembers)
+            {
+                if (i == mName)
+                {
+                    yes = true;
+                }
+            }
+            List<string> clLeaders = GetLeaders(clName[0]);
+            foreach (string i in clLeaders)
+            {
+                if (i == mName)
+                {
+                    yes = true;
+                }
+            }
+            return yes;
         }
     }
 }

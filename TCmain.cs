@@ -30,7 +30,7 @@ namespace TerraClans
 		}
 		public override Version Version
 		{
-			get { return new Version("1.0.1.0124"); }
+			get { return new Version("1.1.0.0202"); }
 		}
 		public override string Name
 		{

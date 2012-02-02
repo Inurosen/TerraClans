@@ -28,7 +28,7 @@ namespace TerraClans
                     //tclan kick player
                     if (TCutils.AlreadyInClan(args.Player.UserAccountName))
                     {
-                        //coming
+                        TCkick(args);
                     }
                     else
                     {
@@ -48,14 +48,18 @@ namespace TerraClans
                 {
                     TCDecline(args);
                 }
-                else if (TCutils.AlreadyInClan(args.Player.UserAccountName))
+                //tclan leave/quit
+                else if (args.Parameters[0] == "leave" || args.Parameters[0] == "quit")
                 {
-                    args.Player.SendMessage("You are already in clan!", Color.Red);
+                    TCQuit(args);
                 }
                 else
                 {
-                    args.Player.SendMessage("TerraClans:", Color.Red);
-                    args.Player.SendMessage("/tclan accept/decline - accepts/declines invitation.", Color.Red);
+                    if (!TCutils.AlreadyInClan(args.Player.UserAccountName))
+                    {
+                        args.Player.SendMessage("TerraClans:", Color.Red);
+                        args.Player.SendMessage("/tclan accept/decline - accepts/declines invitation.", Color.Red);
+                    }
                 }
             }
             else
@@ -65,6 +69,14 @@ namespace TerraClans
                     args.Player.SendMessage("TerraClans:", Color.Red);
                     args.Player.SendMessage("/tcsay <message>; /c <message> - sends message to your clan chat", Color.Red);
                     args.Player.SendMessage("/tclan invite <player> - invites player to your clan chat", Color.Red);
+                    if (TCutils.IsLeader(args.Player.UserAccountName))
+                    {
+                        args.Player.SendMessage("/tclan kick <player> - kicks player from your clan.", Color.Red);
+                    }
+                    else
+                    {
+                        args.Player.SendMessage("/tclan leave/quit - to leave the clan.", Color.Red);
+                    }
                 }
                 else
                 {
@@ -198,7 +210,7 @@ namespace TerraClans
                 plr.SendMessage("You have joined to " + clanName, Color.Orange);
                 plr.SendMessage("Please, relogin to apply new settings for your account.", Color.Orange);
                 string msg = incArgs.Player.Name + " has joined the clan.";
-                TCutils.ClanMsg(incArgs.Player, msg, 1);
+                TCutils.ClanMsg(incArgs.Player, msg, 1, true);
             }
             else
             {
@@ -237,7 +249,8 @@ namespace TerraClans
                     strInv = string.Join(",", invites.ToArray());
                 }
                 string msg = incArgs.Player.Name + " has declined invitation.";
-                TCutils.ClanMsg(incArgs.Player, msg, 1); TCdb.DB.QueryReader("UPDATE Clans SET invites='" + strInv + "' WHERE clanname='" + clanName + "'");
+                TCutils.ClanMsg(incArgs.Player, msg, 1, false);
+                TCdb.DB.QueryReader("UPDATE Clans SET invites='" + strInv + "' WHERE clanname='" + clanName + "'");
                 plr.SendMessage("You have declined the invitation.", Color.Orange);
 
             }
@@ -245,6 +258,138 @@ namespace TerraClans
             {
                 plr.SendMessage("You are not invited to any clan!", Color.Red);
             }
+        }
+
+        public static void TCkick(CommandArgs incArgs)
+        {
+            if (!incArgs.Player.IsLoggedIn)
+            {
+                incArgs.Player.SendMessage("You are not not logged in!", Color.Red);
+                return;
+            }
+            if (!TCutils.AlreadyInClan(incArgs.Player.UserAccountName))
+            {
+                incArgs.Player.SendMessage("You are not in clan!", Color.Red);
+                return;
+            }
+            if (!TCutils.IsLeader(incArgs.Player.UserAccountName))
+            {
+                incArgs.Player.SendMessage("You are not a leader!", Color.Red);
+                return;
+            }
+            List<Player> victims = TCutils.GetPlayersByName(incArgs.Parameters[1]);
+            if (victims.Count == 0)
+            {
+                incArgs.Player.SendMessage("Player does not exist!", Color.Red);
+                return;
+            }
+            if (incArgs.Player.UserAccountName == TCutils.GetPlayersByName(incArgs.Parameters[1])[0].TSPlayer.UserAccountName)
+            {
+                incArgs.Player.SendMessage("You can't kick yourself!", Color.Red);
+                return;
+            }
+            if (!victims[0].TSPlayer.IsLoggedIn)
+            {
+                incArgs.Player.SendMessage("Player is not logged in!", Color.Red);
+                return;
+            }
+            if (!TCutils.IsValidMember(victims[0].TSPlayer.UserAccountName, incArgs.Player.UserAccountName))
+            {
+                incArgs.Player.SendMessage("Player is not in your clan!", Color.Red);
+                return;
+            }
+            if(TCutils.IsLeader(victims[0].TSPlayer.UserAccountName))
+            {
+                incArgs.Player.SendMessage("You can't kick another leader!", Color.Red);
+                return;
+            }
+            List<string> clName = TCutils.GetClanByLeader(incArgs.Player.UserAccountName);
+            List<string> clMembers = new List<string>();
+            string rawMembers = "";
+            var DBQuery = TCdb.DB.QueryReader("SELECT members FROM Clans WHERE clanname='" + clName[0] + "'");
+            while (DBQuery.Read())
+            {
+                string[] arr = DBQuery.Get<string>("members").Split(',');
+                foreach (string i in arr)
+                {
+                    clMembers.Add(i);
+                }
+
+            }
+            for (int c = 0; c < clMembers.Count; c++ )
+            {
+                if (victims[0].TSPlayer.UserAccountName == clMembers[c])
+                {
+                    clMembers.RemoveAt(c);
+                    break;
+                }
+            }
+            if (clMembers.Count > 0)
+            {
+                rawMembers = string.Join(",", clMembers.ToArray());
+            }
+            TCdb.DB.QueryReader("UPDATE Clans SET members='" + rawMembers + "' WHERE clanname='" + clName[0] + "'");
+            var user = new User();
+            user.Name = victims[0].TSPlayer.UserAccountName;
+            if (!victims[0].TSPlayer.Group.HasPermission("terraclans"))
+            {
+                TShock.Users.SetUserGroup(user, TShock.Config.DefaultRegistrationGroupName);
+            }
+            TCutils.ClanMsg(incArgs.Player, victims[0].TSPlayer.Name + " has been kicked from the clan!", 1, false); 
+            victims[0].TSPlayer.SendMessage("You have been kicked from the clan!", Color.Yellow);
+        }
+
+        public static void TCQuit(CommandArgs incArgs)
+        {
+            if (!incArgs.Player.IsLoggedIn)
+            {
+                incArgs.Player.SendMessage("You are not not logged in!", Color.Red);
+                return;
+            }
+            if (!TCutils.AlreadyInClan(incArgs.Player.UserAccountName))
+            {
+                incArgs.Player.SendMessage("You are not in clan!", Color.Red);
+                return;
+            }
+            if (TCutils.IsLeader(incArgs.Player.UserAccountName))
+            {
+                incArgs.Player.SendMessage("Leaders can't leave the clan!", Color.Red);
+                return;
+            }
+            List<string> clName = TCutils.GetClanByMember(incArgs.Player.UserAccountName);
+            List<string> clMembers = new List<string>();
+            string rawMembers = "";
+            var DBQuery = TCdb.DB.QueryReader("SELECT members FROM Clans WHERE clanname='" + clName[0] + "'");
+            while (DBQuery.Read())
+            {
+                string[] arr = DBQuery.Get<string>("members").Split(',');
+                foreach (string i in arr)
+                {
+                    clMembers.Add(i);
+                }
+
+            }
+            for (int c = 0; c < clMembers.Count; c++)
+            {
+                if (incArgs.Player.UserAccountName == clMembers[c])
+                {
+                    clMembers.RemoveAt(c);
+                    break;
+                }
+            }
+            if (clMembers.Count > 0)
+            {
+                rawMembers = string.Join(",", clMembers.ToArray());
+            }
+            TCutils.ClanMsg(incArgs.Player, incArgs.Player.Name + " has left the clan!", 1, true);
+            TCdb.DB.QueryReader("UPDATE Clans SET members='" + rawMembers + "' WHERE clanname='" + clName[0] + "'");
+            var user = new User();
+            user.Name = incArgs.Player.UserAccountName;
+            if (!incArgs.Player.Group.HasPermission("terraclans"))
+            {
+                TShock.Users.SetUserGroup(user, TShock.Config.DefaultRegistrationGroupName);
+            }
+            incArgs.Player.SendMessage("You have left the clan!", Color.Yellow);
         }
 
     }
