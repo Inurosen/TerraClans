@@ -25,6 +25,23 @@ namespace TerraClans
                     {
                         args.Player.SendMessage("TerraClans:", Color.Red);
                         args.Player.SendMessage("/tcman add <clanname> <leader> <group> - adds clan.", Color.Red);
+                        args.Player.SendMessage("/tcman del <clanname> - deletes clan.", Color.Red);
+                    }
+                }
+            }
+            else if (args.Parameters.Count == 2)
+            {
+                if (args.Player.Group.HasPermission("manageclans"))
+                {
+                    if (args.Parameters[0] == "del")
+                    {
+                        TCdel(args);
+                    }
+                    else
+                    {
+                        args.Player.SendMessage("TerraClans:", Color.Red);
+                        args.Player.SendMessage("/tcman add <clanname> <leader> <group> - adds clan.", Color.Red);
+                        args.Player.SendMessage("/tcman del <clanname> - deletes clan.", Color.Red);
                     }
                 }
             }
@@ -32,6 +49,7 @@ namespace TerraClans
             {
                 args.Player.SendMessage("TerraClans:", Color.Red);
                 args.Player.SendMessage("/tcman add <clanname> <leader> <group> - adds clan.", Color.Red);
+                args.Player.SendMessage("/tcman del <clanname> - deletes clan.", Color.Red);
             }
         }
 
@@ -133,5 +151,48 @@ namespace TerraClans
             }
         }
 
+        public static void TCdel(CommandArgs incArgs)
+        {
+            string clName = "";
+            string clGroup = "";
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname, clangroup FROM Clans WHERE clanname='" + incArgs.Parameters[1] + "'");
+            while (DBQuery.Read())
+            {
+                clName = DBQuery.Get<string>("clanname");
+                clGroup = DBQuery.Get<string>("clangroup");
+            }
+            if (clName == "")
+            {
+                incArgs.Player.SendMessage("Clan \"" + incArgs.Parameters[1] + "\" doesn't exist!", Color.Red);
+                return;
+            }
+            List<string> clMembers = TCutils.GetMembers(clName);
+            List<string> clLeaders = TCutils.GetLeaders(clName);
+            foreach (string i in clMembers)
+            {
+                var user = new User();
+                user.Name = i;
+                string gr = TShock.Users.GetUserByName(i).Group;
+                if (!TShock.Utils.GetGroup(gr).HasPermission("terraclans"))
+                {
+                    TShock.Users.SetUserGroup(user, TShock.Config.DefaultRegistrationGroupName);
+                }
+            }
+            string initPl = "";
+            foreach (string i in clLeaders)
+            {
+                var user = new User();
+                user.Name = i;
+                initPl = i;
+                string gr = TShock.Users.GetUserByName(i).Group;
+                if (!TShock.Utils.GetGroup(gr).HasPermission("terraclans"))
+                {
+                    TShock.Users.SetUserGroup(user, TShock.Config.DefaultRegistrationGroupName);
+                }
+            }
+            TCutils.ClanMsg(initPl, "Your clan has been disbanded by " + incArgs.Player.Name + "!", 1, false);
+            TCdb.DB.QueryReader("DELETE FROM Clans WHERE clanname = '" + clName + "'");
+            TShock.Groups.DeleteGroup(clGroup);
+        }
     }
 }

@@ -21,7 +21,7 @@ namespace TerraClans
                     {
                         msg = msg + " " + args.Parameters[i];
                     }
-                    TCutils.ClanMsg(args.Player, msg, 0, false);   
+                    TCutils.ClanMsg(args.Player.UserAccountName, msg, 0, false);   
                 }
                 else
                 {

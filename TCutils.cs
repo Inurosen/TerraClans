@@ -6,17 +6,17 @@ namespace TerraClans
 {
     class TCutils
     {
-        public static void ClanMsg(TSPlayer plObj, string msg, int type, bool ignoreInit)
+        public static void ClanMsg(string plUser, string msg, int type, bool ignoreInit)
         {
             var clr = Color.GreenYellow;
             string clanName = "";
             string prefix = "Clan";
-            var DBQuery = TCdb.DB.QueryReader("SELECT clanname FROM Clans WHERE leaders LIKE '%" + plObj.UserAccountName + "%' OR members LIKE '%" + plObj.UserAccountName + "%' OR invites LIKE '%" + plObj.UserAccountName + "%'");
+            var DBQuery = TCdb.DB.QueryReader("SELECT clanname FROM Clans WHERE leaders LIKE '%" + plUser + "%' OR members LIKE '%" + plUser + "%' OR invites LIKE '%" + plUser + "%'");
             while (DBQuery.Read())
             {
                 clanName = DBQuery.Get<string>("clanname");
             }
-            DBQuery = TCdb.DB.QueryReader("SELECT leaders, members FROM Clans WHERE (leaders LIKE '%" + plObj.UserAccountName + "%' OR members LIKE '%" + plObj.UserAccountName + "%') AND (clanname = '" + clanName + "')");
+            DBQuery = TCdb.DB.QueryReader("SELECT leaders, members FROM Clans WHERE (leaders LIKE '%" + plUser + "%' OR members LIKE '%" + plUser + "%') AND (clanname = '" + clanName + "')");
             List<string> recievers = new List<string>();
             while (DBQuery.Read())
             {
@@ -24,7 +24,7 @@ namespace TerraClans
                 foreach (string plr in inClan)
                 {
                     recievers.Add(plr);
-                    if (plObj.UserAccountName == plr)
+                    if (plUser == plr)
                     {
                         prefix = "Leader";
                         clr = Color.SpringGreen;
@@ -46,13 +46,13 @@ namespace TerraClans
                         {
                             if (type == 0) // Chat Message
                             {
-                                player.TSPlayer.SendMessage("[" + prefix + "] " + plObj.Name + ":" + msg, clr);
+                                player.TSPlayer.SendMessage("[" + prefix + "] " + TCutils.GetPlayersByUserName(plUser)[0].TSPlayer.Name + ":" + msg, clr);
                             }
                             else if (type == 1) // Clan announcer
                             {
                                 if (ignoreInit)
                                 {
-                                    if (player.TSPlayer.UserAccountName != plObj.UserAccountName)
+                                    if (player.TSPlayer.UserAccountName != plUser)
                                     {
                                         player.TSPlayer.SendMessage(msg, Color.Yellow);
                                     }
@@ -69,7 +69,7 @@ namespace TerraClans
             }
             else
             {
-                plObj.SendMessage("You are not in clan!", Color.Red);
+                TCutils.GetPlayersByUserName(plUser)[0].TSPlayer.SendMessage("You are not in clan!", Color.Red);
             }
         }
 

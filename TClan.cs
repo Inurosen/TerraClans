@@ -210,7 +210,7 @@ namespace TerraClans
                 plr.SendMessage("You have joined to " + clanName, Color.Orange);
                 plr.SendMessage("Please, relogin to apply new settings for your account.", Color.Orange);
                 string msg = incArgs.Player.Name + " has joined the clan.";
-                TCutils.ClanMsg(incArgs.Player, msg, 1, true);
+                TCutils.ClanMsg(incArgs.Player.UserAccountName, msg, 1, true);
             }
             else
             {
@@ -249,7 +249,7 @@ namespace TerraClans
                     strInv = string.Join(",", invites.ToArray());
                 }
                 string msg = incArgs.Player.Name + " has declined invitation.";
-                TCutils.ClanMsg(incArgs.Player, msg, 1, false);
+                TCutils.ClanMsg(incArgs.Player.UserAccountName, msg, 1, false);
                 TCdb.DB.QueryReader("UPDATE Clans SET invites='" + strInv + "' WHERE clanname='" + clanName + "'");
                 plr.SendMessage("You have declined the invitation.", Color.Orange);
 
@@ -335,7 +335,7 @@ namespace TerraClans
             {
                 TShock.Users.SetUserGroup(user, TShock.Config.DefaultRegistrationGroupName);
             }
-            TCutils.ClanMsg(incArgs.Player, victims[0].TSPlayer.Name + " has been kicked from the clan!", 1, false); 
+            TCutils.ClanMsg(incArgs.Player.UserAccountName, victims[0].TSPlayer.Name + " has been kicked from the clan!", 1, false); 
             victims[0].TSPlayer.SendMessage("You have been kicked from the clan!", Color.Yellow);
         }
 
@@ -381,7 +381,7 @@ namespace TerraClans
             {
                 rawMembers = string.Join(",", clMembers.ToArray());
             }
-            TCutils.ClanMsg(incArgs.Player, incArgs.Player.Name + " has left the clan!", 1, true);
+            TCutils.ClanMsg(incArgs.Player.UserAccountName, incArgs.Player.Name + " has left the clan!", 1, true);
             TCdb.DB.QueryReader("UPDATE Clans SET members='" + rawMembers + "' WHERE clanname='" + clName[0] + "'");
             var user = new User();
             user.Name = incArgs.Player.UserAccountName;
